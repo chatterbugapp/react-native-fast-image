@@ -1,16 +1,24 @@
 package com.dylanvann.fastimage;
 
 import android.app.Activity;
+import android.graphics.drawable.Drawable;
+
+import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.model.GlideUrl;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.SizeReadyCallback;
+import com.bumptech.glide.request.target.Target;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.views.imagehelper.ImageSource;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeMap;
 
 class FastImageViewModule extends ReactContextBaseJavaModule {
 
@@ -26,17 +34,23 @@ class FastImageViewModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void preload(final ReadableArray sources) {
+    public void preload(final ReadableArray sources, final Promise onSizeDetermined) {
         final Activity activity = getCurrentActivity();
         if (activity == null) return;
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                final boolean canIssuePromise = sources.size() == 1;
+
+                if (!canIssuePromise) {
+                    onSizeDetermined.resolve(null);
+                }
+
                 for (int i = 0; i < sources.size(); i++) {
                     final ReadableMap source = sources.getMap(i);
                     final FastImageSource imageSource = FastImageViewConverter.getImageSource(activity, source);
 
-                    Glide
+                    Target<Drawable> target = Glide
                             .with(activity.getApplicationContext())
                             // This will make this work for remote and local images. e.g.
                             //    - file:///
@@ -49,7 +63,33 @@ class FastImageViewModule extends ReactContextBaseJavaModule {
                                     imageSource.isResource() ? imageSource.getUri() : imageSource.getGlideUrl()
                             )
                             .apply(FastImageViewConverter.getOptions(activity, imageSource, source))
+                            .addListener(new RequestListener<Drawable>() {
+                                @Override
+                                public boolean onLoadFailed(@Nullable GlideException e, Object o, Target<Drawable> target, boolean b) {
+                                    if (canIssuePromise) {
+                                        onSizeDetermined.reject(e.getMessage());
+                                    }
+                                    return false;
+                                }
+
+                                @Override
+                                public boolean onResourceReady(Drawable drawable, Object o, Target<Drawable> target, DataSource dataSource, boolean b) {
+                                    return false;
+                                }
+                            })
                             .preload();
+
+                    if (canIssuePromise) {
+                        target.getSize(new SizeReadyCallback() {
+                            @Override
+                            public void onSizeReady(int w, int h) {
+                                final WritableMap map = new WritableNativeMap();
+                                map.putInt("width", w);
+                                map.putInt("height", h);
+                                onSizeDetermined.resolve(map);
+                            }
+                        });
+                    }
                 }
             }
         });
