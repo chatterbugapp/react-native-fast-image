@@ -202,9 +202,11 @@ export interface FastImageStaticProperties {
     resizeMode: typeof resizeMode
     priority: typeof priority
     cacheControl: typeof cacheControl
-    preload: (sources: Source[]) => void
     clearMemoryCache: () => Promise<void>
     clearDiskCache: () => Promise<void>
+    preload: (
+        sources: Source[],
+    ) => Promise<{ width: number; height: number } | null>
 }
 
 const FastImage: React.ComponentType<FastImageProps> &
