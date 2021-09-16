@@ -79,10 +79,7 @@ class FastImageViewModule extends ReactContextBaseJavaModule {
 
                                     final int w = drawable.getIntrinsicWidth();
                                     final int h = drawable.getIntrinsicHeight();
-
                                     final WritableMap map = new WritableNativeMap();
-                                    Log.i("RNFI", "Here's the width: " + w);
-                                    Log.i("RNFI", "Here's the height: " + h);
 
                                     map.putInt("width", w);
                                     map.putInt("height", h);
