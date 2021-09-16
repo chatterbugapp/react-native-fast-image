@@ -21,7 +21,8 @@ RCT_EXPORT_VIEW_PROPERTY(onFastImageLoad, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onFastImageLoadEnd, RCTDirectEventBlock)
 RCT_REMAP_VIEW_PROPERTY(tintColor, imageColor, UIColor)
 
-RCT_EXPORT_METHOD(preload:(nonnull NSArray<FFFastImageSource *> *)sources)
+RCT_EXPORT_METHOD(preload:(nonnull NSArray<FFFastImageSource *> *)sources resolver:(RCTPromiseResolveBlock)resolve
+    rejecter:(RCTPromiseRejectBlock)reject)
 {
     NSMutableArray *urls = [NSMutableArray arrayWithCapacity:sources.count];
 
@@ -33,6 +34,7 @@ RCT_EXPORT_METHOD(preload:(nonnull NSArray<FFFastImageSource *> *)sources)
     }];
 
     [[SDWebImagePrefetcher sharedImagePrefetcher] prefetchURLs:urls];
+    resolve(NULL);
 }
 
 RCT_EXPORT_METHOD(clearMemoryCache:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
