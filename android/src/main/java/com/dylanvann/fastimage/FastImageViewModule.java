@@ -2,6 +2,7 @@ package com.dylanvann.fastimage;
 
 import android.app.Activity;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -74,22 +75,22 @@ class FastImageViewModule extends ReactContextBaseJavaModule {
 
                                 @Override
                                 public boolean onResourceReady(Drawable drawable, Object o, Target<Drawable> target, DataSource dataSource, boolean b) {
+                                    if (!canIssuePromise) return false;
+
+                                    final int w = drawable.getIntrinsicWidth();
+                                    final int h = drawable.getIntrinsicHeight();
+
+                                    final WritableMap map = new WritableNativeMap();
+                                    Log.i("RNFI", "Here's the width: " + w);
+                                    Log.i("RNFI", "Here's the height: " + h);
+
+                                    map.putInt("width", w);
+                                    map.putInt("height", h);
+                                    onSizeDetermined.resolve(map);
                                     return false;
                                 }
                             })
                             .preload();
-
-                    if (canIssuePromise) {
-                        target.getSize(new SizeReadyCallback() {
-                            @Override
-                            public void onSizeReady(int w, int h) {
-                                final WritableMap map = new WritableNativeMap();
-                                map.putInt("width", w);
-                                map.putInt("height", h);
-                                onSizeDetermined.resolve(map);
-                            }
-                        });
-                    }
                 }
             }
         });
